@@ -5,7 +5,11 @@
  * readings, troparia, and kontakia.
  */
 
-const BASE_URL = 'https://orthocal.info/api';
+// In production (Vercel) we go through our own serverless proxy to avoid CORS.
+// In local dev we can hit orthocal.info directly via the same proxy path because
+// Vite's dev server doesn't serve /api — so we fall back to the real URL.
+const IS_DEV = import.meta.env.DEV;
+const BASE_URL = IS_DEV ? 'https://orthocal.info/api' : '/api/orthocal';
 const CACHE_PREFIX = 'orthocal_';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -61,10 +65,14 @@ export async function fetchLiturgicalDay(year, month, day) {
   let data = null;
   let source = 'oca';
 
+  const buildUrl = (calendar) =>
+    IS_DEV
+      ? `${BASE_URL}/${calendar}/${year}/${paddedMonth}/${paddedDay}/`
+      : `${BASE_URL}?calendar=${calendar}&year=${year}&month=${paddedMonth}&day=${paddedDay}`;
+
   // Try OCA calendar
   try {
-    const url = `${BASE_URL}/oca/${year}/${paddedMonth}/${paddedDay}/`;
-    const res = await fetch(url);
+    const res = await fetch(buildUrl('oca'));
     if (res.ok) {
       data = await res.json();
       source = 'oca';
@@ -76,8 +84,7 @@ export async function fetchLiturgicalDay(year, month, day) {
   // Fallback to ROCOR calendar
   if (!data) {
     try {
-      const url = `${BASE_URL}/rocor/${year}/${paddedMonth}/${paddedDay}/`;
-      const res = await fetch(url);
+      const res = await fetch(buildUrl('rocor'));
       if (res.ok) {
         data = await res.json();
         source = 'rocor';
