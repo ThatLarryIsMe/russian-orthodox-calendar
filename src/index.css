@@ -1,0 +1,228 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-parchment: #F5F0E8;
+  --color-parchment-dark: #EDE8DC;
+  --color-parchment-darker: #E0D9CC;
+  --color-charcoal: #2B2B2B;
+  --color-charcoal-light: #4A4A4A;
+  --color-gold: #B8860B;
+  --color-gold-light: #C5A035;
+  --color-gold-pale: #D4B56A;
+  --color-burgundy: #722F37;
+  --color-burgundy-light: #8B3A44;
+  --color-teal: #1F6F5C;
+  --color-teal-light: #2A8F78;
+  --color-fast-purple: #5B3A6B;
+  --color-fast-purple-light: #7A4F8E;
+  --color-warm-gray: #8A8278;
+  --color-warm-gray-light: #C2BBB0;
+  --color-warm-gray-pale: #E8E2D8;
+
+  --font-heading: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --font-body: 'Lora', Georgia, serif;
+  --font-liturgical: 'EB Garamond', 'Cormorant Garamond', Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-parchment);
+  color: var(--color-charcoal);
+  font-family: var(--font-body);
+  line-height: 1.7;
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.liturgical-text {
+  font-family: var(--font-liturgical);
+  font-style: italic;
+  line-height: 1.8;
+}
+
+/* Ornamental divider */
+.ornament-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 2rem 0;
+  color: var(--color-gold);
+}
+
+.ornament-divider::before,
+.ornament-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--color-gold-pale), transparent);
+}
+
+/* Icon frame */
+.icon-frame {
+  border: 3px solid var(--color-gold-pale);
+  box-shadow:
+    0 0 0 1px var(--color-gold),
+    inset 0 0 12px rgba(184, 134, 11, 0.15),
+    0 4px 12px rgba(43, 43, 43, 0.2);
+  background: #1a1008;
+}
+
+/* Collapsible animations */
+.collapse-content {
+  overflow: hidden;
+  transition: max-height 0.4s ease-out, opacity 0.3s ease-out;
+}
+
+.collapse-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+}
+
+.collapse-content.expanded {
+  max-height: 9999px;
+  opacity: 1;
+}
+
+/* Loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -468px 0; }
+  100% { background-position: 468px 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    to right,
+    #e8e2d8 8%,
+    #d4ccc0 18%,
+    #e8e2d8 33%
+  );
+  background-size: 800px 104px;
+  animation: shimmer 1.5s infinite linear;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-parchment-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-gold-pale);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gold);
+}
+
+/* Byzantine pattern overlay */
+.byzantine-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23B8860B' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Button base */
+button {
+  cursor: pointer;
+}
+
+/* Remove default Vite styles */
+a {
+  color: var(--color-gold);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-gold-light);
+  text-decoration: underline;
+}
+
+/* React Day Picker overrides for Orthodox theme */
+.rdp-root {
+  --rdp-accent-color: var(--color-gold) !important;
+  --rdp-accent-background-color: #FDF3DC !important;
+  --rdp-day-height: 36px !important;
+  --rdp-day-width: 36px !important;
+  background: var(--color-parchment);
+  font-family: var(--font-body);
+  padding: 0.75rem;
+}
+
+.rdp-month_caption {
+  font-family: var(--font-heading) !important;
+  color: var(--color-charcoal) !important;
+}
+
+.rdp-weekday {
+  font-family: var(--font-body) !important;
+  color: var(--color-warm-gray) !important;
+  font-size: 0.7rem !important;
+}
+
+.rdp-day_button {
+  font-family: var(--font-body) !important;
+  font-size: 0.85rem !important;
+  color: var(--color-charcoal) !important;
+  border-radius: 50% !important;
+}
+
+.rdp-day_button:hover:not([disabled]) {
+  background: var(--color-parchment-dark) !important;
+}
+
+.rdp-selected .rdp-day_button {
+  background: var(--color-gold) !important;
+  color: white !important;
+  font-weight: 600 !important;
+}
+
+.rdp-today:not(.rdp-selected) .rdp-day_button {
+  border: 1.5px solid var(--color-gold-pale) !important;
+  color: var(--color-gold) !important;
+  font-weight: 600 !important;
+}
+
+/* Section details/summary */
+details > summary {
+  user-select: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Verse number superscripts */
+sup.verse-num {
+  font-size: 0.65em;
+  color: var(--color-warm-gray);
+  margin-right: 0.2em;
+  font-family: var(--font-body);
+  vertical-align: super;
+}
+
+/* Print styles */
+@media print {
+  header {
+    position: static !important;
+  }
+  .icon-frame {
+    box-shadow: none !important;
+  }
+}

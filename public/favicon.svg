@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#F5F0E8"/>
+  <!-- Orthodox cross (8-pointed) -->
+  <!-- Vertical beam -->
+  <rect x="44" y="10" width="12" height="80" rx="2" fill="#B8860B"/>
+  <!-- Horizontal beam (main) -->
+  <rect x="20" y="30" width="60" height="12" rx="2" fill="#B8860B"/>
+  <!-- Horizontal beam (top/title) -->
+  <rect x="35" y="18" width="30" height="8" rx="2" fill="#B8860B"/>
+  <!-- Diagonal foot beam -->
+  <line x1="30" y1="80" x2="70" y2="65" stroke="#B8860B" stroke-width="8" stroke-linecap="round"/>
+</svg>
