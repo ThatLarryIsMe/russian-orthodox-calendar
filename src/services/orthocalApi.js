@@ -119,9 +119,9 @@ function normalizeOrthocalData(raw, source) {
     weekOfYear: raw.week_of_year || null,
     // Liturgical season & fasting
     fastingLevel: raw.fast_level || 0,
-    fastingLevelName: raw.fast_level_desc || '',
+    fastingLevelName: toStr(raw.fast_level_desc),
     fastingException: raw.fast_exception || 0,
-    fastingExceptionDesc: raw.fast_exception_desc || '',
+    fastingExceptionDesc: toStr(raw.fast_exception_desc),
     // Feasts
     feasts: (raw.feast_details || []).map(normalizeFeast),
     feastNames: raw.feasts || [],
@@ -137,11 +137,11 @@ function normalizeOrthocalData(raw, source) {
 function normalizeFeast(feast) {
   return {
     id: feast.id || null,
-    name: feast.name || feast.title || '',
+    name: toStr(feast.name) || toStr(feast.title),
     rank: feast.rank || null,
-    rankName: feast.rank_name || feast.rank_desc || '',
+    rankName: toStr(feast.rank_name) || toStr(feast.rank_desc),
     color: feast.colour || feast.color || null,
-    colorName: feast.colour_name || feast.color_name || '',
+    colorName: toStr(feast.colour_name) || toStr(feast.color_name),
     description: toStr(feast.description),
   };
 }
@@ -187,11 +187,11 @@ function normalizeSaint(saint) {
 
 function normalizeReading(reading) {
   // Build a human-readable passage reference from the reading data
-  const book = reading.book || reading.book_abbrev || '';
+  const book = toStr(reading.book) || toStr(reading.book_abbrev);
   const chapter = reading.chapter;
   const verse = reading.verse;
   const verseEnd = reading.verse_end;
-  let passageRef = reading.passage || reading.sd_reading || '';
+  let passageRef = toStr(reading.passage) || toStr(reading.sd_reading);
 
   if (!passageRef && book) {
     passageRef = book;
@@ -212,11 +212,11 @@ function normalizeReading(reading) {
     chapter: chapter || null,
     verse: verse || null,
     verseEnd: verseEnd || null,
-    bookAbbrev: reading.book_abbrev || reading.book_name || book,
-    desc: reading.desc || reading.description || '',
-    sdReading: reading.sd_reading || '',
+    bookAbbrev: toStr(reading.book_abbrev) || toStr(reading.book_name) || book,
+    desc: toStr(reading.desc) || toStr(reading.description),
+    sdReading: toStr(reading.sd_reading),
     pericope: reading.pericope || null,
-    liturgy: reading.liturgy || reading.source || reading.service || '',
+    liturgy: toStr(reading.liturgy) || toStr(reading.source) || toStr(reading.service),
     passageRef,
     // Full text fetched separately
     fullText: null,
