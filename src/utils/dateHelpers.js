@@ -138,50 +138,41 @@ export function getToneName(tone) {
 
 /**
  * Get a season name from the liturgical data.
- * The orthocal API provides week_of_year which we can use.
+ * Uses paschaDistance (days from Pascha, negative = before) for accurate labels,
+ * with feast-name keywords as higher-priority overrides.
  */
 export function getLiturgicalSeasonLabel(data) {
   if (!data) return '';
 
-  // Check feast descriptions for season cues
   const feastNames = (data.feastNames || []).join(' ').toLowerCase();
-  const feasts = (data.feasts || []);
 
-  // Great Lent
-  if (feastNames.includes('lent') || feastNames.includes('clean monday') ||
-      feastNames.includes('great lent')) {
-    return 'Great Lent';
+  // Keyword overrides — feast names give us the most specific labels
+  if (feastNames.includes('great lent') || feastNames.includes('clean monday')) return 'Great Lent';
+  if (feastNames.includes('nativity fast') || feastNames.includes('advent')) return 'Nativity Fast';
+  if (feastNames.includes('dormition fast')) return 'Dormition Fast';
+  if (feastNames.includes('apostles') && data.fastingLevel > 1) return "Apostles' Fast";
+  if (feastNames.includes('bright week') || feastNames.includes('paschal week')) return 'Bright Week';
+  if (feastNames.includes('pascha') || feastNames.includes('easter')) return 'Paschal Season';
+
+  // Derive season from paschaDistance (days relative to Pascha)
+  const pdist = data.paschaDistance;
+  if (typeof pdist === 'number') {
+    if (pdist <= -48) return 'Triodion Season';         // pre-Lenten Triodion
+    if (pdist < -6)   return 'Great Lent';              // Clean Monday through Holy Thursday
+    if (pdist < 0)    return 'Holy Week';
+    if (pdist === 0)  return 'Pascha';
+    if (pdist <= 7)   return 'Bright Week';
+    if (pdist <= 49) {
+      const wk = Math.ceil(pdist / 7);
+      return `Week ${wk} of Pascha`;
+    }
+    // After Pentecost (pdist 50+)
+    const wk = Math.ceil((pdist - 49) / 7);
+    return `Week ${wk} after Pentecost`;
   }
 
-  // Nativity Fast
-  if (feastNames.includes('nativity fast') || feastNames.includes('advent')) {
-    return 'Nativity Fast';
-  }
-
-  // Apostles Fast
-  if (feastNames.includes('apostles') && data.fastingLevel > 1) {
-    return "Apostles' Fast";
-  }
-
-  // Dormition Fast
-  if (feastNames.includes('dormition fast')) {
-    return 'Dormition Fast';
-  }
-
-  // Bright Week (Pascha)
-  if (feastNames.includes('bright') || feastNames.includes('paschal')) {
-    return 'Bright Week';
-  }
-
-  // Paschal season
-  if (feastNames.includes('pascha') || feastNames.includes('easter')) {
-    return 'Paschal Season';
-  }
-
-  // Use week of year if available
-  if (data.weekOfYear) {
-    return `Week ${data.weekOfYear} after Pentecost`;
-  }
+  // Explicit week number (rare — older API versions)
+  if (data.weekOfYear) return `Week ${data.weekOfYear} after Pentecost`;
 
   return '';
 }

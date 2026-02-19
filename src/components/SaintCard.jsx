@@ -33,7 +33,12 @@ function IconPlaceholder({ saintName }) {
           className="text-xs text-center px-2 leading-tight"
           style={{ color: 'var(--color-gold-pale)', opacity: 0.7, maxWidth: '110px' }}
         >
-          {saintName?.split(' ').slice(-2).join(' ')}
+          {(saintName || '')
+            .replace(/\s*\([^)]*\)/g, '')
+            .split(/\s+/)
+            .filter(w => !['of', 'the', 'and', 'from', 'in', 'at', 'by', 'with'].includes(w.toLowerCase()))
+            .slice(-2)
+            .join(' ')}
         </div>
       </div>
     </div>

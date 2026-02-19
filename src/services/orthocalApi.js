@@ -150,7 +150,11 @@ function normalizeOrthocalData(raw, source) {
     julianDay: raw.jdn || raw.julian_day_number || null,
     oldCalendarDate: raw.old_calendar_date || null,
     tone: raw.tone || null,
-    weekOfYear: raw.week_of_year || raw.pascha_distance || null,
+    // pascha_distance is days from Pascha (negative = before); store separately
+    // from weekOfYear so the season label isn't computed incorrectly
+    paschaDistance: typeof raw.pdist === 'number' ? raw.pdist
+      : typeof raw.pascha_distance === 'number' ? raw.pascha_distance : null,
+    weekOfYear: raw.week_of_year || null,
     // Liturgical season & fasting
     fastingLevel: raw.fast_level || 0,
     fastingLevelName: toStr(raw.fast_level_desc),
