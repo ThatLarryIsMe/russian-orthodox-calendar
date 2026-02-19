@@ -5,7 +5,7 @@
 
 import { SectionHeader } from './OrnamentDivider.jsx';
 import { getToneName, getLiturgicalSeasonLabel, formatDate, gregorianToJulian } from '../utils/dateHelpers.js';
-import { fastingLevelToString, formatLiturgicalColor } from '../utils/formatters.js';
+import { formatLiturgicalColor } from '../utils/formatters.js';
 import { getLiturgicalColor, getFastingDescription } from '../services/orthocalApi.js';
 
 function InfoCard({ label, value, subValue, colorDot }) {
@@ -142,7 +142,7 @@ export function CalendarPosition({ data, selectedDate }) {
         {data.fastingLevel > 0 && (
           <InfoCard
             label="Fasting Rule"
-            value={fastingLevelToString(data.fastingLevel)}
+            value={fastDesc}
           />
         )}
         {litColor && (

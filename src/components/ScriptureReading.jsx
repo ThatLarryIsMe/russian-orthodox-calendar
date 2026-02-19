@@ -109,14 +109,17 @@ function ScriptureText({ passage, text, version, error, loading }) {
 }
 
 function SingleReading({ reading, index }) {
-  const [scriptureData, setScriptureData] = useState(null);
+  // Use the full text that the orthocal API already provides, if available
+  const hasApiText = !!reading.fullText;
+  const [scriptureData, setScriptureData] = useState(
+    hasApiText ? { text: reading.fullText, version: 'KJV', reference: reading.passageRef } : null
+  );
   const [loading, setLoading] = useState(false);
-  const [fetched, setFetched] = useState(false);
+  const [fetched, setFetched] = useState(hasApiText);
 
   const type = categorizeReading(reading);
   const liturgyName = getLiturgyName(reading);
 
-  // Build a human-readable reference
   const ref = reading.passageRef ||
     reading.sdReading ||
     reading.desc ||
@@ -136,9 +139,9 @@ function SingleReading({ reading, index }) {
     }
   };
 
-  // Auto-fetch for the first 3 readings
+  // Only fetch externally if the API didn't already provide the text
   useEffect(() => {
-    if (index < 3) {
+    if (!hasApiText && index < 3) {
       fetchText();
     }
   }, [ref]);

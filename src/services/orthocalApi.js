@@ -10,7 +10,7 @@
 // Vite's dev server doesn't serve /api — so we fall back to the real URL.
 const IS_DEV = import.meta.env.DEV;
 const BASE_URL = IS_DEV ? 'https://orthocal.info/api' : '/api/orthocal';
-const CACHE_PREFIX = 'orthocal_v3_';
+const CACHE_PREFIX = 'orthocal_v4_';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
@@ -271,10 +271,22 @@ function normalizeReading(reading) {
     toStr(reading.liturgy) ||
     toStr(reading.service);
 
+  // Extract full text from the API's passage array (List[VerseSchema])
+  // Each verse has: { book, chapter, verse, content, paragraph_start }
+  let fullText = null;
+  if (Array.isArray(reading.passage) && reading.passage.length > 0) {
+    fullText = reading.passage
+      .map(v => {
+        const text = (v.content || v.text || '').trim();
+        const verseNum = v.verse || '';
+        return `<sup class="verse-num">${verseNum}</sup> ${text}`;
+      })
+      .join(' ');
+  }
+
   return {
     id: reading.id || null,
     book,
-    // chapter/verse may not exist in the new API (reference is in display)
     chapter: reading.chapter || null,
     verse: reading.verse || null,
     verseEnd: reading.verse_end || null,
@@ -284,7 +296,7 @@ function normalizeReading(reading) {
     pericope: typeof reading.pericope === 'number' ? reading.pericope : null,
     liturgy,
     passageRef: passageRef || sdReading,
-    fullText: null,
+    fullText,
   };
 }
 

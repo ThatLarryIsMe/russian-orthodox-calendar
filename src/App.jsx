@@ -10,7 +10,6 @@ import { CalendarPosition } from './components/CalendarPosition.jsx';
 import { FeastDay } from './components/FeastDay.jsx';
 import { SaintsSection } from './components/SaintCard.jsx';
 import { ScriptureReadings } from './components/ScriptureReading.jsx';
-import { PatristicCommentary } from './components/PatristicCommentary.jsx';
 import { OrnamentDivider } from './components/OrnamentDivider.jsx';
 import { LoadingSkeleton } from './components/LoadingSkeleton.jsx';
 import { fetchLiturgicalDay } from './services/orthocalApi.js';
@@ -72,7 +71,7 @@ function FooterNote() {
         className="text-sm mb-1"
         style={{ color: 'var(--color-warm-gray)', fontFamily: 'var(--font-body)' }}
       >
-        Liturgical data sourced from{' '}
+        Liturgical data and scripture text from{' '}
         <a
           href="https://orthocal.info"
           target="_blank"
@@ -81,7 +80,7 @@ function FooterNote() {
         >
           orthocal.info
         </a>
-        {' '}· Scripture text via bible-api.com (KJV)
+        {' '}(KJV)
       </p>
       <p
         className="text-xs"
@@ -169,10 +168,6 @@ export default function App() {
             {/* Section 4: Scripture Readings */}
             <ScriptureReadings data={liturgicalData} />
 
-            <OrnamentDivider />
-
-            {/* Section 5: Patristic Commentary */}
-            <PatristicCommentary data={liturgicalData} />
           </article>
         )}
 
