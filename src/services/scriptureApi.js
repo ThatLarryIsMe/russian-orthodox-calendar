@@ -127,10 +127,14 @@ export function parseReference(ref) {
 
 /**
  * Determine if a reading is Epistle, Gospel, or OT from its descriptor.
+ * Works with both the old API field names and the new orthocal.info schema where:
+ *   reading.book    = Bible book abbreviation (e.g. "Mt", "Rom") OR liturgical book name
+ *   reading.passageRef = full reference string (e.g. "Matthew 5:1-7", "Romans 5:1-11")
  */
 export function categorizeReading(reading) {
-  const desc = (reading.desc || reading.liturgy || '').toLowerCase();
   const book = (reading.book || reading.bookAbbrev || '').toLowerCase();
+  // Extract the book portion of the passage reference string (first word)
+  const refBook = (reading.passageRef || reading.sdReading || '').split(/[\s:]/)[0].toLowerCase();
 
   const gospels = ['matthew', 'mark', 'luke', 'john', 'mt', 'mk', 'lk', 'jn'];
   const ot = ['genesis', 'exodus', 'leviticus', 'numbers', 'deuteronomy',
@@ -141,9 +145,15 @@ export function categorizeReading(reading) {
                'habakkuk', 'zephaniah', 'haggai', 'zechariah', 'malachi',
                'wisdom', 'sirach', 'baruch', 'maccabees'];
 
+  // Check passage reference first (most reliable — full book name like "Matthew")
+  if (gospels.some(g => refBook.startsWith(g))) return 'gospel';
+  if (ot.some(b => refBook.startsWith(b))) return 'old-testament';
+
+  // Fall back to reading.book (Bible abbreviation like "Mt" or liturgical name "Evangelion")
   if (gospels.some(g => book.startsWith(g))) return 'gospel';
+  if (book === 'evangelion') return 'gospel';
   if (ot.some(b => book.startsWith(b))) return 'old-testament';
-  if (book === 'acts' || book === 'act') return 'epistle'; // Acts is read as Epistle
+  if (book === 'acts' || book === 'act') return 'epistle';
   return 'epistle';
 }
 
@@ -157,7 +167,7 @@ export function getLiturgyName(reading) {
   if (liturgy.includes('vesper')) return 'Vespers';
   if (liturgy.includes('liturgy') || liturgy.includes('divine liturgy')) return 'Divine Liturgy';
   if (liturgy.includes('hours')) return 'Hours';
+  if (liturgy.includes('apostol')) return 'Divine Liturgy';
 
-  // Check pericope number — high pericope numbers often indicate Matins
   return 'Divine Liturgy';
 }

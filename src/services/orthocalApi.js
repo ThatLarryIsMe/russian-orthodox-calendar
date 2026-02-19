@@ -10,7 +10,7 @@
 // Vite's dev server doesn't serve /api — so we fall back to the real URL.
 const IS_DEV = import.meta.env.DEV;
 const BASE_URL = IS_DEV ? 'https://orthocal.info/api' : '/api/orthocal';
-const CACHE_PREFIX = 'orthocal_';
+const CACHE_PREFIX = 'orthocal_v3_';
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
@@ -105,28 +105,62 @@ export async function fetchLiturgicalDay(year, month, day) {
 
 /**
  * Normalize the raw orthocal API response into a consistent shape.
+ *
+ * The actual orthocal.info API (v1.1, Django Ninja schema) returns:
+ *   saints   → List[str]          (just name strings, no detail objects)
+ *   feasts   → List[str]          (just feast-name strings)
+ *   stories  → List[{title,story}] (HTML saint-life text, separate from saints)
+ *   readings → List[ReadingSchema] (passage is List[VerseSchema], reference is in display)
  */
 function normalizeOrthocalData(raw, source) {
+  // Build a story lookup so we can attach life text to each saint by name
+  const storyByTitle = {};
+  (raw.stories || []).forEach(s => {
+    if (s && s.title) storyByTitle[s.title] = toStr(s.story);
+  });
+
+  // saints is an array of name strings in the real API
+  const rawSaints = Array.isArray(raw.saint_details) && raw.saint_details.length > 0
+    ? raw.saint_details
+    : (raw.saints || []);
+
+  const saints = rawSaints.map(s => {
+    const normalized = normalizeSaint(s);
+    // Attach the story (HTML life text) if not already populated
+    if (!normalized.life && storyByTitle[normalized.name]) {
+      normalized.life = storyByTitle[normalized.name];
+    }
+    return normalized;
+  });
+
+  // feasts is an array of name strings in the real API; feast_details may not exist
+  const rawFeasts = Array.isArray(raw.feast_details) && raw.feast_details.length > 0
+    ? raw.feast_details
+    : (raw.feasts || []);
+
+  const feasts = rawFeasts.map(normalizeFeast);
+  const feastNames = (raw.feasts || []).map(f => (typeof f === 'string' ? f : toStr(f.name || '')));
+
   return {
     source,
     // Calendar position
     year: raw.year,
     month: raw.month,
     day: raw.day,
-    julianDay: raw.jdn,
+    julianDay: raw.jdn || raw.julian_day_number || null,
     oldCalendarDate: raw.old_calendar_date || null,
     tone: raw.tone || null,
-    weekOfYear: raw.week_of_year || null,
+    weekOfYear: raw.week_of_year || raw.pascha_distance || null,
     // Liturgical season & fasting
     fastingLevel: raw.fast_level || 0,
     fastingLevelName: toStr(raw.fast_level_desc),
     fastingException: raw.fast_exception || 0,
     fastingExceptionDesc: toStr(raw.fast_exception_desc),
     // Feasts
-    feasts: (raw.feast_details || []).map(normalizeFeast),
-    feastNames: raw.feasts || [],
-    // Saints
-    saints: (raw.saint_details || raw.saints || []).map(normalizeSaint),
+    feasts,
+    feastNames,
+    // Saints (with stories attached)
+    saints,
     // Readings
     readings: (raw.readings || []).map(normalizeReading),
     // Raw for debugging
@@ -135,6 +169,10 @@ function normalizeOrthocalData(raw, source) {
 }
 
 function normalizeFeast(feast) {
+  // The real API returns feasts as plain strings; handle that case gracefully
+  if (typeof feast === 'string') {
+    return { id: null, name: feast, rank: null, rankName: '', color: null, colorName: '', description: '' };
+  }
   return {
     id: feast.id || null,
     name: toStr(feast.name) || toStr(feast.title),
@@ -153,6 +191,16 @@ function toStr(val) {
 }
 
 function normalizeSaint(saint) {
+  // The real API returns saints as plain strings (just the name)
+  if (typeof saint === 'string') {
+    return {
+      id: null, name: saint, rank: null, rankName: '', life: '',
+      troparionTitle: '', troparion: '', troparionTone: null,
+      kontakionTitle: '', kontakion: '', kontakionTone: null,
+      iconUrl: null, iconDesc: '', shortLife: '',
+    };
+  }
+
   const troparionText = typeof saint.troparion === 'string'
     ? saint.troparion
     : saint.troparion?.text || '';
@@ -160,7 +208,6 @@ function normalizeSaint(saint) {
     ? saint.kontakion
     : saint.kontakion?.text || '';
 
-  // Try to extract tone from the text if not explicitly given
   const extractTone = (text, explicitTone) => {
     if (explicitTone) return explicitTone;
     const match = text?.match(/^Tone\s+(\d+)/i);
@@ -169,56 +216,70 @@ function normalizeSaint(saint) {
 
   return {
     id: saint.id || null,
-    name: saint.name || saint.title || '',
+    name: toStr(saint.name) || toStr(saint.title),
     rank: saint.rank || null,
-    rankName: saint.rank_name || saint.rank_desc || '',
+    rankName: toStr(saint.rank_name) || toStr(saint.rank_desc),
     life: toStr(saint.life) || toStr(saint.biography),
-    troparionTitle: saint.troparion_title || '',
+    troparionTitle: toStr(saint.troparion_title),
     troparion: troparionText,
     troparionTone: extractTone(troparionText, saint.troparion_tone || saint.troparion?.tone),
-    kontakionTitle: saint.kontakion_title || '',
+    kontakionTitle: toStr(saint.kontakion_title),
     kontakion: kontakionText,
     kontakionTone: extractTone(kontakionText, saint.kontakion_tone || saint.kontakion?.tone),
     iconUrl: saint.icon || saint.image || null,
-    iconDesc: saint.icon_desc || '',
+    iconDesc: toStr(saint.icon_desc),
     shortLife: toStr(saint.short_life),
   };
 }
 
 function normalizeReading(reading) {
-  // Build a human-readable passage reference from the reading data
-  const book = toStr(reading.book) || toStr(reading.book_abbrev);
-  const chapter = reading.chapter;
-  const verse = reading.verse;
-  const verseEnd = reading.verse_end;
-  let passageRef = toStr(reading.passage) || toStr(reading.sd_reading);
+  // The real API (ReadingSchema) has:
+  //   display       → full scripture reference string, e.g. "Romans 5:1-11"
+  //   short_display → abbreviated reference, e.g. "Rom 5:1-11"
+  //   source        → which service, e.g. "Apostol", "Vespers"
+  //   book          → Bible book from the pericope (e.g. "Rom", "Mt")
+  //   description   → reading descriptor (alias 'desc' in older field naming)
+  //   passage       → List[VerseSchema] (array of verse objects — NOT a string)
+  //
+  // Older/alternate field names are kept as fallbacks.
 
-  if (!passageRef && book) {
-    passageRef = book;
-    if (chapter) {
-      passageRef += ` ${chapter}`;
-      if (verse) {
-        passageRef += `:${verse}`;
-        if (verseEnd && verseEnd !== verse) {
-          passageRef += `-${verseEnd}`;
-        }
-      }
-    }
-  }
+  const passageRef =
+    toStr(reading.display) ||
+    toStr(reading['pericope.display']) ||
+    toStr(reading.sd_reading);
+
+  const sdReading =
+    toStr(reading.short_display) ||
+    toStr(reading['pericope.sdisplay']) ||
+    toStr(reading.sd_reading);
+
+  const book =
+    toStr(reading.book) ||
+    toStr(reading['pericope.book']) ||
+    toStr(reading.book_abbrev);
+
+  const desc =
+    toStr(reading.description) ||
+    toStr(reading.desc);
+
+  const liturgy =
+    toStr(reading.source) ||
+    toStr(reading.liturgy) ||
+    toStr(reading.service);
 
   return {
     id: reading.id || null,
     book,
-    chapter: chapter || null,
-    verse: verse || null,
-    verseEnd: verseEnd || null,
-    bookAbbrev: toStr(reading.book_abbrev) || toStr(reading.book_name) || book,
-    desc: toStr(reading.desc) || toStr(reading.description),
-    sdReading: toStr(reading.sd_reading),
-    pericope: reading.pericope || null,
-    liturgy: toStr(reading.liturgy) || toStr(reading.source) || toStr(reading.service),
-    passageRef,
-    // Full text fetched separately
+    // chapter/verse may not exist in the new API (reference is in display)
+    chapter: reading.chapter || null,
+    verse: reading.verse || null,
+    verseEnd: reading.verse_end || null,
+    bookAbbrev: book,
+    desc,
+    sdReading,
+    pericope: typeof reading.pericope === 'number' ? reading.pericope : null,
+    liturgy,
+    passageRef: passageRef || sdReading,
     fullText: null,
   };
 }
