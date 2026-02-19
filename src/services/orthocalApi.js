@@ -142,8 +142,14 @@ function normalizeFeast(feast) {
     rankName: feast.rank_name || feast.rank_desc || '',
     color: feast.colour || feast.color || null,
     colorName: feast.colour_name || feast.color_name || '',
-    description: feast.description || '',
+    description: toStr(feast.description),
   };
+}
+
+function toStr(val) {
+  if (typeof val === 'string') return val;
+  if (Array.isArray(val)) return val.join('\n\n');
+  return '';
 }
 
 function normalizeSaint(saint) {
@@ -166,7 +172,7 @@ function normalizeSaint(saint) {
     name: saint.name || saint.title || '',
     rank: saint.rank || null,
     rankName: saint.rank_name || saint.rank_desc || '',
-    life: saint.life || saint.biography || '',
+    life: toStr(saint.life) || toStr(saint.biography),
     troparionTitle: saint.troparion_title || '',
     troparion: troparionText,
     troparionTone: extractTone(troparionText, saint.troparion_tone || saint.troparion?.tone),
@@ -175,7 +181,7 @@ function normalizeSaint(saint) {
     kontakionTone: extractTone(kontakionText, saint.kontakion_tone || saint.kontakion?.tone),
     iconUrl: saint.icon || saint.image || null,
     iconDesc: saint.icon_desc || '',
-    shortLife: saint.short_life || '',
+    shortLife: toStr(saint.short_life),
   };
 }
 
